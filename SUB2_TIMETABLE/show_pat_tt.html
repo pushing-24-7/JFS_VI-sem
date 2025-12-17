@@ -23,6 +23,12 @@
             font-size: 20px;
             margin-top: 30px;
         }
+        .su-class {
+        background-color: yellow;
+        padding: 4px;
+        display: inline-block;
+        width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -60,7 +66,10 @@ function populateFacultyDropdown(data) {
     });
 
     const select = document.getElementById("facultySelect");
-    select.innerHTML = `<option value="">-- Select Faculty --</option>`;
+    select.innerHTML = `
+    <option value="">-- Select Faculty --</option>
+    <option value="__ALL__">All Faculties</option>
+`;
 
     [...facultySet].sort().forEach(faculty => {
         const opt = document.createElement("option");
@@ -72,15 +81,20 @@ function populateFacultyDropdown(data) {
     select.disabled = false;
 
     select.onchange = function () {
-        if (this.value) {
-            const filtered = globalData.filter(
-                row => row["FACULTY"] === this.value
-            );
-            processCSV(filtered);
-        } else {
-            document.getElementById("tables").innerHTML = "";
-        }
-    };
+    if (!this.value) {
+        document.getElementById("tables").innerHTML = "";
+        return;
+    }
+
+    if (this.value === "__ALL__") {
+        processCSV(globalData);   // 👈 no filtering
+    } else {
+        const filtered = globalData.filter(
+            row => row["FACULTY"] === this.value
+        );
+        processCSV(filtered);
+    }
+};
 }
 
 function processCSV(data) {
@@ -100,10 +114,18 @@ function processCSV(data) {
 
         if (!day || !session) return;
 
+        // ✅ SU detection from BATCH column
+        const isSU = batch && batch.toUpperCase().includes("-SU-B2");
+
+        const faculty = row["FACULTY"];
+
         const entry = `
+            <div class="${isSU ? 'su-class' : ''}">
             <b>${course}</b><br>
             Batch: ${batch}<br>
-            Room: ${room}
+            Room: ${room}<br>
+            <i>${faculty}</i>
+            </div>
         `;
 
         timetable[day][session].push(entry);
